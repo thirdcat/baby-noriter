@@ -1,0 +1,444 @@
+:root {
+  color-scheme: light;
+  --ink: #213047;
+  --muted: #5f6f85;
+  --panel: rgba(255, 255, 255, 0.86);
+  --yellow: #ffd45a;
+  --coral: #ff715b;
+  --mint: #41c99b;
+  --blue: #4c8df6;
+  --pink: #f87bc8;
+  --shadow: 0 24px 60px rgba(28, 52, 86, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: ui-rounded, "Arial Rounded MT Bold", "Nunito", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 16%, rgba(255, 212, 90, 0.95) 0 9rem, transparent 9.1rem),
+    radial-gradient(circle at 88% 12%, rgba(248, 123, 200, 0.72) 0 7rem, transparent 7.1rem),
+    linear-gradient(135deg, #b7e8ff 0%, #d7f6d8 46%, #fff2b8 100%);
+  overflow-x: hidden;
+}
+
+button {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.play-stage {
+  position: relative;
+  width: min(1180px, 100%);
+  min-height: min(880px, calc(100vh - 36px));
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  gap: 18px;
+  padding: clamp(16px, 2.4vw, 28px);
+  border: 5px solid rgba(255, 255, 255, 0.74);
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.2));
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.top-bar,
+.action-row {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.control-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  color: var(--coral);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 4.25rem);
+  line-height: 1;
+}
+
+.mode-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.mode-button,
+.primary-action,
+.sound-toggle {
+  min-height: 54px;
+  border: 0;
+  border-radius: 16px;
+  padding: 0 20px;
+  font-weight: 900;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 8px 0 rgba(33, 48, 71, 0.12);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+.mode-button {
+  background: transparent;
+  box-shadow: none;
+}
+
+.mode-button.active {
+  background: var(--yellow);
+  box-shadow: 0 7px 0 rgba(198, 143, 20, 0.28);
+}
+
+.operation-tabs {
+  position: relative;
+  z-index: 2;
+  display: none;
+  grid-template-columns: repeat(5, minmax(86px, 1fr));
+  gap: 8px;
+  padding: 6px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.operation-tabs.visible {
+  display: grid;
+}
+
+.operation-button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 1000;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+.operation-button.active {
+  background: var(--mint);
+  color: white;
+  box-shadow: 0 6px 0 rgba(25, 126, 95, 0.22);
+}
+
+.primary-action {
+  background: var(--mint);
+  color: white;
+}
+
+.sound-toggle {
+  background: white;
+  color: var(--blue);
+}
+
+.sound-toggle.active {
+  background: var(--blue);
+  color: white;
+}
+
+button:active {
+  transform: translateY(5px) scale(0.98);
+  box-shadow: 0 2px 0 rgba(33, 48, 71, 0.12);
+}
+
+.letter-zone {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+}
+
+.letter-card {
+  width: min(760px, 96%);
+  aspect-ratio: 1.32;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  justify-items: center;
+  padding: clamp(20px, 4vw, 44px);
+  border-radius: 34px;
+  background: var(--panel);
+  border: 6px solid white;
+  box-shadow: 0 28px 64px rgba(24, 46, 76, 0.22);
+}
+
+.prompt-label {
+  min-height: 36px;
+  text-align: center;
+  font-size: clamp(1rem, 2.1vw, 1.7rem);
+  font-weight: 900;
+  color: var(--muted);
+}
+
+.big-letter {
+  line-height: 0.88;
+  font-size: clamp(10rem, 30vw, 23rem);
+  font-weight: 1000;
+  color: var(--coral);
+  text-shadow:
+    0 8px 0 white,
+    0 18px 30px rgba(56, 70, 96, 0.22);
+}
+
+.big-letter.problem {
+  font-size: clamp(4.6rem, 12vw, 9.5rem);
+  line-height: 1;
+}
+
+.phonics {
+  min-height: 44px;
+  font-size: clamp(1.7rem, 4vw, 3.5rem);
+  font-weight: 1000;
+  color: var(--blue);
+}
+
+.letter-card.pop {
+  animation: pop 420ms cubic-bezier(0.2, 1.6, 0.32, 1);
+}
+
+.letter-card.correct {
+  animation: correctPulse 780ms ease;
+}
+
+.letter-card.wrong {
+  animation: wrongShake 420ms ease;
+}
+
+.celebration {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.spark {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--spark-color, var(--yellow));
+  animation: sparkle 900ms ease-out forwards;
+}
+
+.input-pad {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(13, minmax(40px, 1fr));
+  gap: 8px;
+}
+
+.letter-button,
+.number-button {
+  aspect-ratio: 1;
+  min-width: 0;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+  font-size: clamp(1.35rem, 3vw, 2.5rem);
+  font-weight: 1000;
+  cursor: pointer;
+  box-shadow: 0 6px 0 rgba(33, 48, 71, 0.12);
+}
+
+.number-button {
+  background: rgba(255, 245, 204, 0.9);
+}
+
+.number-button.clear-button {
+  aspect-ratio: auto;
+  grid-column: span 2;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--coral);
+}
+
+.shape {
+  position: absolute;
+  z-index: 0;
+  display: block;
+  opacity: 0.65;
+  animation: float 5s ease-in-out infinite;
+}
+
+.shape-a {
+  left: 6%;
+  bottom: 17%;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: var(--pink);
+}
+
+.shape-b {
+  right: 8%;
+  bottom: 24%;
+  width: 90px;
+  height: 90px;
+  background: var(--yellow);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  animation-delay: -1.2s;
+}
+
+.shape-c {
+  left: 18%;
+  top: 20%;
+  width: 92px;
+  height: 56px;
+  border-radius: 28px;
+  background: var(--mint);
+  animation-delay: -2s;
+}
+
+.shape-d {
+  right: 22%;
+  top: 15%;
+  width: 70px;
+  height: 70px;
+  border-radius: 18px;
+  background: var(--blue);
+  transform: rotate(18deg);
+  animation-delay: -3s;
+}
+
+.stage-correct {
+  animation: stageCorrect 600ms ease;
+}
+
+.stage-wrong {
+  animation: stageWrong 420ms ease;
+}
+
+@keyframes pop {
+  0% { transform: scale(0.82) rotate(-3deg); }
+  58% { transform: scale(1.08) rotate(2deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes correctPulse {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.08); background: rgba(216, 255, 226, 0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes wrongShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-18px) rotate(-2deg); }
+  40% { transform: translateX(16px) rotate(2deg); }
+  60% { transform: translateX(-10px) rotate(-1deg); }
+  80% { transform: translateX(8px) rotate(1deg); }
+}
+
+@keyframes sparkle {
+  from {
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 1;
+  }
+  to {
+    transform: translate(calc(-50% + var(--spark-x)), calc(-50% + var(--spark-y))) scale(1.3);
+    opacity: 0;
+  }
+}
+
+@keyframes stageCorrect {
+  0%, 100% { background-color: transparent; }
+  35% { background-color: rgba(65, 201, 155, 0.24); }
+}
+
+@keyframes stageWrong {
+  0%, 100% { background-color: transparent; }
+  35% { background-color: rgba(255, 113, 91, 0.25); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-18px) rotate(8deg); }
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    padding: 8px;
+  }
+
+  .play-stage {
+    min-height: calc(100vh - 16px);
+    border-width: 3px;
+    border-radius: 20px;
+  }
+
+  .top-bar,
+  .action-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .control-stack,
+  .mode-tabs,
+  .action-row > button {
+    width: 100%;
+  }
+
+  .operation-tabs {
+    grid-template-columns: repeat(3, minmax(72px, 1fr));
+  }
+
+  .operation-button {
+    min-height: 46px;
+    padding: 0 8px;
+  }
+
+  .mode-button {
+    flex: 1;
+    padding: 0 10px;
+  }
+
+  .input-pad {
+    grid-template-columns: repeat(7, minmax(38px, 1fr));
+  }
+
+  .input-pad.number-pad {
+    grid-template-columns: repeat(4, minmax(48px, 1fr));
+  }
+
+  .letter-card {
+    width: 100%;
+    aspect-ratio: 0.92;
+    border-radius: 26px;
+  }
+
+  .shape-c,
+  .shape-d {
+    display: none;
+  }
+}

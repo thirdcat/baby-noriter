@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>글자 숫자 놀이터</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell" aria-live="polite">
+      <section class="play-stage" id="stage">
+        <div class="sky-shapes" aria-hidden="true">
+          <span class="shape shape-a"></span>
+          <span class="shape shape-b"></span>
+          <span class="shape shape-c"></span>
+          <span class="shape shape-d"></span>
+        </div>
+
+        <header class="top-bar">
+          <div>
+            <p class="eyebrow" id="eyebrow">ALPHABET PLAY</p>
+            <h1 id="appTitle">알파벳 놀이터</h1>
+          </div>
+          <div class="control-stack">
+            <div class="mode-tabs" role="tablist" aria-label="놀이 종류">
+              <button class="mode-button active" id="alphabetPlayButton" type="button" role="tab" aria-selected="true">
+                알파벳
+              </button>
+              <button class="mode-button" id="numberPlayButton" type="button" role="tab" aria-selected="false">
+                숫자
+              </button>
+            </div>
+            <div class="mode-tabs" role="tablist" aria-label="놀이 모드">
+              <button class="mode-button active" id="showModeButton" type="button" role="tab" aria-selected="true">
+                크게 보기
+              </button>
+              <button class="mode-button" id="quizModeButton" type="button" role="tab" aria-selected="false">
+                퀴즈
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div class="operation-tabs" id="operationTabs" role="tablist" aria-label="숫자 퀴즈 종류">
+          <button class="operation-button active" data-operation="number" type="button" role="tab" aria-selected="true">
+            숫자
+          </button>
+          <button class="operation-button" data-operation="add" type="button" role="tab" aria-selected="false">
+            덧셈
+          </button>
+          <button class="operation-button" data-operation="subtract" type="button" role="tab" aria-selected="false">
+            뺄셈
+          </button>
+          <button class="operation-button" data-operation="multiply" type="button" role="tab" aria-selected="false">
+            곱셈
+          </button>
+          <button class="operation-button" data-operation="divide" type="button" role="tab" aria-selected="false">
+            나눗셈
+          </button>
+        </div>
+
+        <div class="letter-zone">
+          <div class="letter-card" id="letterCard">
+            <div class="prompt-label" id="promptLabel">키보드에서 알파벳을 눌러보세요</div>
+            <div class="big-letter" id="bigLetter">A</div>
+            <div class="phonics" id="phonics">Apple</div>
+          </div>
+          <div class="celebration" id="celebration" aria-hidden="true"></div>
+        </div>
+
+        <div class="action-row">
+          <button class="primary-action" id="nextQuizButton" type="button">
+            다음 문제
+          </button>
+          <button class="sound-toggle active" id="soundToggle" type="button" aria-pressed="true">
+            소리 켬
+          </button>
+        </div>
+
+        <div class="input-pad" id="inputPad" aria-label="입력 버튼"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
