@@ -17,6 +17,7 @@
 
 html,
 body {
+  height: 100%;
   min-height: 100%;
 }
 
@@ -28,7 +29,7 @@ body {
     radial-gradient(circle at 12% 16%, rgba(255, 212, 90, 0.95) 0 9rem, transparent 9.1rem),
     radial-gradient(circle at 88% 12%, rgba(248, 123, 200, 0.72) 0 7rem, transparent 7.1rem),
     linear-gradient(135deg, #b7e8ff 0%, #d7f6d8 46%, #fff2b8 100%);
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 button {
@@ -36,20 +37,26 @@ button {
 }
 
 .app-shell {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100svh;
+  min-height: 0;
   display: grid;
   place-items: center;
-  padding: 18px;
+  padding: clamp(8px, 1.8svh, 18px);
+  overflow: hidden;
 }
 
 .play-stage {
   position: relative;
+  isolation: isolate;
   width: min(1180px, 100%);
-  min-height: min(880px, calc(100vh - 36px));
-  display: grid;
-  grid-template-rows: auto auto 1fr auto auto;
-  gap: 18px;
-  padding: clamp(16px, 2.4vw, 28px);
+  height: calc(100vh - clamp(16px, 3.6svh, 36px));
+  height: calc(100svh - clamp(16px, 3.6svh, 36px));
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1.1svh, 14px);
+  padding: clamp(8px, min(2vw, 1.6svh), 22px);
   border: 5px solid rgba(255, 255, 255, 0.74);
   border-radius: 26px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.2));
@@ -57,19 +64,25 @@ button {
   overflow: hidden;
 }
 
+.play-stage.number-quiz {
+  gap: clamp(6px, 1.1svh, 14px);
+}
+
 .top-bar,
 .action-row {
   position: relative;
-  z-index: 2;
+  z-index: 4;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
+  min-width: 0;
 }
 
 .control-stack {
   display: grid;
   gap: 10px;
+  min-width: 0;
 }
 
 .eyebrow {
@@ -92,12 +105,14 @@ h1 {
   padding: 6px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.62);
+  min-width: 0;
 }
 
 .mode-button,
 .primary-action,
 .sound-toggle {
-  min-height: 54px;
+  min-width: 0;
+  min-height: clamp(42px, 5.4svh, 54px);
   border: 0;
   border-radius: 16px;
   padding: 0 20px;
@@ -120,27 +135,41 @@ h1 {
 
 .operation-tabs {
   position: relative;
-  z-index: 2;
+  z-index: 5;
   display: none;
-  grid-template-columns: repeat(5, minmax(86px, 1fr));
-  gap: 8px;
-  padding: 6px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.62);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 2px;
+  height: 32px;
+  padding: 1px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 3px 8px rgba(33, 48, 71, 0.06);
+  overflow: hidden;
+  min-width: 0;
 }
 
 .operation-tabs.visible {
   display: grid;
+  margin-bottom: 0;
 }
 
 .operation-button {
-  min-height: 48px;
+  height: 30px;
+  min-height: 0;
   border: 0;
-  border-radius: 14px;
-  padding: 0 12px;
+  border-radius: 6px;
+  padding: 0 4px;
   background: transparent;
   color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(0.68rem, 1.25vw, 0.86rem);
   font-weight: 1000;
+  line-height: 1;
+  white-space: nowrap;
+  min-width: 0;
   cursor: pointer;
   transition: transform 120ms ease, background 120ms ease;
 }
@@ -148,7 +177,7 @@ h1 {
 .operation-button.active {
   background: var(--mint);
   color: white;
-  box-shadow: 0 6px 0 rgba(25, 126, 95, 0.22);
+  box-shadow: none;
 }
 
 .primary-action {
@@ -174,27 +203,55 @@ button:active {
 .letter-zone {
   position: relative;
   z-index: 1;
+  flex: 1 1 auto;
+  align-self: center;
+  width: min(920px, 100%);
+  height: auto;
   display: grid;
-  place-items: center;
-  min-height: 360px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  border-radius: clamp(20px, 3svh, 34px);
+  background: var(--panel);
+  border: clamp(3px, 0.7svh, 6px) solid white;
+  box-shadow: 0 18px 46px rgba(24, 46, 76, 0.2);
 }
 
 .letter-card {
-  width: min(760px, 96%);
-  aspect-ratio: 1.32;
+  container-type: size;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: auto;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: minmax(24px, auto) minmax(0, 1fr) minmax(30px, auto);
   align-items: center;
   justify-items: center;
-  padding: clamp(20px, 4vw, 44px);
-  border-radius: 34px;
-  background: var(--panel);
-  border: 6px solid white;
-  box-shadow: 0 28px 64px rgba(24, 46, 76, 0.22);
+  padding: clamp(10px, min(3vw, 2.2svh), 28px);
+  border-radius: inherit;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.play-stage.number-quiz .letter-zone {
+  width: min(920px, 100%);
+}
+
+.play-stage.number-quiz .letter-card {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: auto;
 }
 
 .prompt-label {
-  min-height: 36px;
+  min-height: clamp(24px, 3.4svh, 36px);
   text-align: center;
   font-size: clamp(1rem, 2.1vw, 1.7rem);
   font-weight: 900;
@@ -203,7 +260,8 @@ button:active {
 
 .big-letter {
   line-height: 0.88;
-  font-size: clamp(10rem, 30vw, 23rem);
+  font-size: clamp(5rem, min(30vw, 25svh), 23rem);
+  font-size: clamp(5rem, min(36cqw, 52cqh), 23rem);
   font-weight: 1000;
   color: var(--coral);
   text-shadow:
@@ -212,26 +270,31 @@ button:active {
 }
 
 .big-letter.problem {
-  font-size: clamp(4.6rem, 12vw, 9.5rem);
+  font-size: clamp(3rem, min(12vw, 11svh), 9.5rem);
+  font-size: clamp(3rem, min(16cqw, 34cqh), 9.5rem);
   line-height: 1;
 }
 
 .phonics {
-  min-height: 44px;
-  font-size: clamp(1.7rem, 4vw, 3.5rem);
+  min-height: clamp(26px, 3.8svh, 44px);
+  font-size: clamp(1.25rem, min(4vw, 4svh), 3.5rem);
+  font-size: clamp(1.25rem, min(6cqw, 12cqh), 3.5rem);
   font-weight: 1000;
   color: var(--blue);
 }
 
 .letter-card.pop {
+  transform-origin: center;
   animation: pop 420ms cubic-bezier(0.2, 1.6, 0.32, 1);
 }
 
 .letter-card.correct {
+  transform-origin: center;
   animation: correctPulse 780ms ease;
 }
 
 .letter-card.wrong {
+  transform-origin: center;
   animation: wrongShake 420ms ease;
 }
 
@@ -256,7 +319,8 @@ button:active {
   z-index: 2;
   display: grid;
   grid-template-columns: repeat(13, minmax(40px, 1fr));
-  gap: 8px;
+  gap: clamp(5px, 1svh, 8px);
+  min-width: 0;
 }
 
 .letter-button,
@@ -267,10 +331,15 @@ button:active {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.82);
   color: var(--ink);
-  font-size: clamp(1.35rem, 3vw, 2.5rem);
+  font-size: clamp(1.1rem, min(3vw, 3.2svh), 2.5rem);
   font-weight: 1000;
   cursor: pointer;
   box-shadow: 0 6px 0 rgba(33, 48, 71, 0.12);
+}
+
+.input-pad.number-pad .number-button {
+  aspect-ratio: auto;
+  min-height: clamp(42px, 7svh, 74px);
 }
 
 .number-button {
@@ -386,15 +455,131 @@ button:active {
   50% { transform: translateY(-18px) rotate(8deg); }
 }
 
+@media (max-height: 880px) and (min-width: 761px) {
+  h1 {
+    font-size: clamp(1.8rem, 3.2vw, 3.2rem);
+  }
+
+  .eyebrow {
+    margin-bottom: 2px;
+  }
+
+  .control-stack {
+    gap: 6px;
+  }
+
+  .mode-tabs,
+  .operation-tabs {
+    gap: 3px;
+    padding: 3px;
+  }
+
+  .operation-tabs {
+    gap: 2px;
+    height: 32px;
+    padding: 1px;
+  }
+
+  .mode-button,
+  .primary-action,
+  .sound-toggle {
+    min-height: 42px;
+    border-radius: 13px;
+    padding: 0 14px;
+  }
+
+  .operation-button {
+    height: 30px;
+    min-height: 0;
+    border-radius: 6px;
+  }
+
+  .letter-card {
+    height: 100%;
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 28px;
+  }
+
+  .play-stage.number-quiz .letter-zone {
+    width: min(920px, 100%);
+  }
+
+  .big-letter {
+    font-size: clamp(5rem, min(26vw, 24svh), 18rem);
+    font-size: clamp(5rem, min(34cqw, 50cqh), 18rem);
+  }
+
+  .big-letter.problem {
+    font-size: clamp(3rem, min(9vw, 9.5svh), 7.5rem);
+    font-size: clamp(3rem, min(15cqw, 32cqh), 7.5rem);
+  }
+
+  .letter-button,
+  .number-button {
+    box-shadow: 0 4px 0 rgba(33, 48, 71, 0.12);
+  }
+}
+
+@media (max-height: 720px) and (min-width: 761px) {
+  .play-stage {
+    border-width: 3px;
+    border-radius: 20px;
+  }
+
+  .prompt-label {
+    font-size: clamp(0.9rem, 1.7vw, 1.25rem);
+  }
+
+  .letter-card {
+    height: 100%;
+    max-height: 100%;
+  }
+
+  .play-stage.number-quiz .letter-zone {
+    width: min(920px, 100%);
+  }
+
+  .phonics {
+    font-size: clamp(1.15rem, min(3vw, 3.4svh), 2.4rem);
+  }
+
+  .input-pad {
+    grid-template-columns: repeat(13, minmax(30px, 1fr));
+  }
+
+  .input-pad.number-pad {
+    grid-template-columns: repeat(12, minmax(34px, 1fr));
+  }
+
+  .input-pad.number-pad .number-button {
+    min-height: clamp(34px, 6svh, 52px);
+  }
+
+  .number-button.clear-button {
+    grid-column: span 2;
+  }
+}
+
 @media (max-width: 760px) {
   .app-shell {
-    padding: 8px;
+    display: block;
+    width: 100vw;
+    padding: 6px;
   }
 
   .play-stage {
-    min-height: calc(100vh - 16px);
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: calc(100vh - 16px);
+    height: calc(100svh - 16px);
+    min-height: 0;
     border-width: 3px;
     border-radius: 20px;
+    gap: 6px;
+    padding: 10px;
   }
 
   .top-bar,
@@ -405,22 +590,25 @@ button:active {
 
   .control-stack,
   .mode-tabs,
+  .operation-tabs,
+  .action-row,
+  .input-pad,
+  .letter-zone,
   .action-row > button {
     width: 100%;
-  }
-
-  .operation-tabs {
-    grid-template-columns: repeat(3, minmax(72px, 1fr));
+    max-width: 100%;
   }
 
   .operation-button {
-    min-height: 46px;
-    padding: 0 8px;
+    height: 30px;
+    min-height: 0;
+    padding: 0 3px;
+    font-size: clamp(0.62rem, 2.7vw, 0.78rem);
   }
 
   .mode-button {
-    flex: 1;
-    padding: 0 10px;
+    flex: 1 1 0;
+    padding: 0 6px;
   }
 
   .input-pad {
@@ -431,10 +619,22 @@ button:active {
     grid-template-columns: repeat(4, minmax(48px, 1fr));
   }
 
+  .input-pad.number-pad .number-button {
+    min-height: clamp(44px, 8.2svh, 64px);
+  }
+
   .letter-card {
     width: 100%;
-    aspect-ratio: 0.92;
+    height: 100%;
+    max-height: 100%;
+    aspect-ratio: auto;
     border-radius: 26px;
+  }
+
+  .play-stage.number-quiz .letter-card {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
   }
 
   .shape-c,

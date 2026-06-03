@@ -62,6 +62,7 @@ let mode = "show";
 let numberQuizKind = "number";
 let currentValue = "A";
 let typedNumber = "";
+let currentQuizHint = "";
 let quizTimer;
 let soundOn = true;
 let audioContext;
@@ -89,10 +90,8 @@ function setPlayKind(nextKind) {
   playKind = nextKind;
   typedNumber = "";
   window.clearTimeout(quizTimer);
-  alphabetPlayButton.classList.toggle("active", playKind === "alphabet");
-  numberPlayButton.classList.toggle("active", playKind === "number");
-  alphabetPlayButton.setAttribute("aria-selected", String(playKind === "alphabet"));
-  numberPlayButton.setAttribute("aria-selected", String(playKind === "number"));
+  updateStageState();
+  renderPlayKindTabs();
   renderChrome();
   renderOperationTabs();
   buildPad();
@@ -103,6 +102,7 @@ function setMode(nextMode) {
   mode = nextMode;
   typedNumber = "";
   window.clearTimeout(quizTimer);
+  updateStageState();
   showModeButton.classList.toggle("active", mode === "show");
   quizModeButton.classList.toggle("active", mode === "quiz");
   showModeButton.setAttribute("aria-selected", String(mode === "show"));
@@ -136,6 +136,19 @@ function renderChrome() {
   }
 }
 
+function renderPlayKindTabs() {
+  alphabetPlayButton.classList.toggle("active", playKind === "alphabet");
+  numberPlayButton.classList.toggle("active", playKind === "number");
+  alphabetPlayButton.setAttribute("aria-selected", String(playKind === "alphabet"));
+  numberPlayButton.setAttribute("aria-selected", String(playKind === "number"));
+}
+
+function updateStageState() {
+  const isNumberQuiz = playKind === "number" && mode === "quiz";
+  stage.classList.toggle("number-quiz", isNumberQuiz);
+  stage.classList.toggle("operation-quiz", isNumberQuiz && numberQuizKind !== "number");
+}
+
 function renderOperationTabs() {
   const isNumberQuiz = playKind === "number" && mode === "quiz";
   operationTabs.classList.toggle("visible", isNumberQuiz);
@@ -149,6 +162,7 @@ function renderOperationTabs() {
 function setNumberQuizKind(nextKind) {
   numberQuizKind = nextKind;
   typedNumber = "";
+  updateStageState();
   renderOperationTabs();
   if (playKind === "number" && mode === "quiz") {
     startQuiz();
@@ -157,6 +171,7 @@ function setNumberQuizKind(nextKind) {
 
 function startQuiz() {
   typedNumber = "";
+  currentQuizHint = "";
 
   if (playKind === "alphabet") {
     const next = alphabet[Math.floor(Math.random() * alphabet.length)];
@@ -168,13 +183,15 @@ function startQuiz() {
   if (numberQuizKind === "number") {
     const next = String(Math.floor(Math.random() * 1000));
     promptLabel.textContent = "이 숫자를 똑같이 눌러보세요";
+    currentQuizHint = numberToKorean(next);
     setDisplay(next, numberToKorean(next));
     return;
   }
 
   const problem = makeOperationProblem(numberQuizKind);
   promptLabel.textContent = `${operationLabels[numberQuizKind]} 문제`;
-  setDisplay(problem.expression, numberToKorean(problem.answer));
+  currentQuizHint = problem.spoken;
+  setDisplay(problem.expression, problem.spoken);
   currentValue = String(problem.answer);
 }
 
@@ -225,7 +242,7 @@ function handleNumberInput(digit) {
 
   typedNumber = `${typedNumber}${digit}`.slice(0, currentValue.length);
   promptLabel.textContent = typedNumber || "숫자를 눌러보세요";
-  phonics.textContent = typedNumber ? numberToKorean(typedNumber) : numberToKorean(currentValue);
+  phonics.textContent = typedNumber ? numberToKorean(typedNumber) : currentQuizHint;
 
   if (typedNumber.length === currentValue.length) {
     checkNumberAnswer();
@@ -253,7 +270,7 @@ function backspaceNumber() {
     setDisplay(next, numberToKorean(next));
   } else {
     promptLabel.textContent = typedNumber || "숫자를 눌러보세요";
-    phonics.textContent = typedNumber ? numberToKorean(typedNumber) : numberToKorean(currentValue);
+    phonics.textContent = typedNumber ? numberToKorean(typedNumber) : currentQuizHint;
   }
 }
 
@@ -286,43 +303,58 @@ function makeOperationProblem(kind) {
     const answer = randomInt(0, 19);
     const left = randomInt(0, answer);
     const right = answer - left;
-    return { expression: `${left} + ${right}`, answer };
+    return makeProblem(`${left} + ${right}`, answer, left, "더하기", right);
   }
 
   if (kind === "subtract") {
     const answer = randomInt(0, 19);
     const right = randomInt(0, 19 - answer);
     const left = answer + right;
-    return { expression: `${left} - ${right}`, answer };
+    return makeProblem(`${left} - ${right}`, answer, left, "빼기", right);
   }
 
   if (kind === "multiply") {
-    const answer = randomInt(0, 19);
-    if (answer === 0) {
-      return Math.random() > 0.5
-        ? { expression: `0 x ${randomInt(0, 9)}`, answer }
-        : { expression: `${randomInt(0, 9)} x 0`, answer };
-    }
-
-    const divisors = [];
-    for (let factor = 1; factor <= 9; factor += 1) {
-      if (answer % factor === 0 && answer / factor <= 9) {
-        divisors.push(factor);
+    const problems = [];
+    for (let left = 0; left <= 9; left += 1) {
+      for (let right = 0; right <= 9; right += 1) {
+        const answer = left * right;
+        if (answer <= 20) {
+          problems.push({ left, right, answer });
+        }
       }
     }
-    const left = divisors[randomInt(0, divisors.length - 1)];
-    const right = answer / left;
-    return { expression: `${left} x ${right}`, answer };
+
+    const problem = problems[randomInt(0, problems.length - 1)];
+    const { left, right, answer } = problem;
+    return makeProblem(`${left} x ${right}`, answer, left, "곱하기", right);
   }
 
   if (kind === "divide") {
-    const answer = randomInt(0, 19);
-    const divisor = randomInt(1, 9);
-    const dividend = answer * divisor;
-    return { expression: `${dividend} ÷ ${divisor}`, answer };
+    const problems = [];
+    for (let dividend = 1; dividend <= 20; dividend += 1) {
+      for (let divisor = 1; divisor <= 9; divisor += 1) {
+        if (dividend % divisor === 0) {
+          problems.push({ dividend, divisor, answer: dividend / divisor });
+        }
+      }
+    }
+
+    const problem = problems[randomInt(0, problems.length - 1)];
+    const { dividend, divisor, answer } = problem;
+    return makeProblem(`${dividend} ÷ ${divisor}`, answer, dividend, "나누기", divisor);
   }
 
-  return { expression: "0", answer: 0 };
+  return makeProblem("0", 0, 0, "", 0);
+}
+
+function makeProblem(expression, answer, left, operator, right) {
+  return {
+    expression,
+    answer,
+    spoken: operator
+      ? `${numberToKorean(left)} ${operator} ${numberToKorean(right)}`
+      : numberToKorean(answer),
+  };
 }
 
 function numberToKorean(value) {
@@ -465,6 +497,23 @@ soundToggle.addEventListener("click", () => {
   if (soundOn) playTone("tap");
 });
 
+function readInitialState() {
+  const params = new URLSearchParams(window.location.search);
+  const requestedPlay = params.get("play");
+  const requestedMode = params.get("mode");
+  const requestedOperation = params.get("op");
+
+  if (requestedOperation && operationLabels[requestedOperation]) {
+    numberQuizKind = requestedOperation;
+  }
+
+  playKind = requestedPlay === "number" ? "number" : "alphabet";
+  mode = requestedMode === "quiz" ? "quiz" : "show";
+}
+
+readInitialState();
+renderPlayKindTabs();
 renderChrome();
+updateStageState();
 buildPad();
-setMode("show");
+setMode(mode);
