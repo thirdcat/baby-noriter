@@ -32,6 +32,9 @@
               <button class="mode-button" id="colorPlayButton" type="button" role="tab" aria-selected="false">
                 색깔
               </button>
+              <button class="mode-button" id="shapePlayButton" type="button" role="tab" aria-selected="false">
+                모양
+              </button>
             </div>
             <div class="mode-tabs" id="modeToggle" role="tablist" aria-label="놀이 모드">
               <button class="mode-button active" id="showModeButton" type="button" role="tab" aria-selected="true">
@@ -100,6 +103,14 @@
             </div>
           </div>
           <div class="celebration" id="colorCelebration" aria-hidden="true"></div>
+        </div>
+
+        <div class="shape-zone" id="shapeZone" hidden>
+          <div class="shape-card" id="shapeCard">
+            <div class="prompt-label" id="shapePrompt">같은 색과 모양을 골라보세요</div>
+            <div class="shape-target" id="shapeTarget"></div>
+          </div>
+          <div class="celebration" id="shapeCelebration" aria-hidden="true"></div>
         </div>
 
         <div class="action-row">
