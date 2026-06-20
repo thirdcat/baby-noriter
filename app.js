@@ -143,6 +143,35 @@ function nameColorKo(r, g, b) {
   return base;
 }
 
+// 모양 놀이: 색깔 + 모양 맞추기
+const shapeColors = [
+  { key: "빨강", hex: "#e8473f" },
+  { key: "주황", hex: "#ff8a1e" },
+  { key: "노랑", hex: "#ffd21e" },
+  { key: "초록", hex: "#36c95a" },
+  { key: "파랑", hex: "#2f7ff0" },
+  { key: "하늘", hex: "#56c5ff" },
+  { key: "보라", hex: "#9b51e0" },
+  { key: "분홍", hex: "#ff7eb6" },
+  { key: "갈색", hex: "#9c6b3f" },
+  { key: "검정", hex: "#2b2b2b" },
+];
+
+const shapeDefs = [
+  { key: "triangle", label: "세모", svg: '<polygon points="50,8 90,88 10,88"/>' },
+  { key: "square", label: "네모", svg: '<rect x="10" y="10" width="80" height="80" rx="8"/>' },
+  { key: "circle", label: "동그라미", svg: '<circle cx="50" cy="50" r="44"/>' },
+  { key: "star", label: "별", svg: '<polygon points="50,2 61.2,34.6 95.6,35.2 68.1,55.9 78.2,88.8 50,69 21.8,88.8 31.9,55.9 4.3,35.2 38.8,34.6"/>' },
+  { key: "rectangle", label: "직사각형", svg: '<rect x="6" y="26" width="88" height="48" rx="8"/>' },
+  { key: "ellipse", label: "타원", svg: '<ellipse cx="50" cy="50" rx="46" ry="30"/>' },
+  { key: "diamond", label: "마름모", svg: '<polygon points="50,6 92,50 50,94 8,50"/>' },
+];
+
+function shapeSvgMarkup(shapeKey, fill) {
+  const def = shapeDefs.find((item) => item.key === shapeKey);
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="${fill}">${def.svg}</svg>`;
+}
+
 const stage = document.querySelector("#stage");
 const letterCard = document.querySelector("#letterCard");
 const bigLetter = document.querySelector("#bigLetter");
@@ -179,6 +208,12 @@ const svSquare = document.querySelector("#svSquare");
 const svThumb = document.querySelector("#svThumb");
 const hueSlider = document.querySelector("#hueSlider");
 const hueThumb = document.querySelector("#hueThumb");
+const shapePlayButton = document.querySelector("#shapePlayButton");
+const shapeZone = document.querySelector("#shapeZone");
+const shapeCard = document.querySelector("#shapeCard");
+const shapeTarget = document.querySelector("#shapeTarget");
+const shapePrompt = document.querySelector("#shapePrompt");
+const shapeCelebration = document.querySelector("#shapeCelebration");
 
 let playKind = "alphabet";
 let mode = "show";
@@ -195,6 +230,11 @@ let colorState = [
   { h: 215, s: 0.85, v: 0.92 },
 ];
 let activeColorSlot = 0;
+let shapeTargetColor = "";
+let shapeTargetShape = "";
+let shapeSelectedColor = "";
+let shapeSelectedShape = "";
+let shapeLocked = false;
 
 function setDisplay(value, label, effect = "pop") {
   currentValue = String(value);
@@ -228,6 +268,11 @@ function setPlayKind(nextKind) {
 
   if (playKind === "color") {
     startColorPlay();
+    return;
+  }
+
+  if (playKind === "shape") {
+    startShapePlay();
     return;
   }
 
@@ -269,10 +314,14 @@ function renderChrome() {
     appTitle.textContent = "숫자 놀이터";
     eyebrow.textContent = "NUMBER PLAY";
     nextQuizButton.textContent = "다음 숫자";
-  } else {
+  } else if (playKind === "color") {
     appTitle.textContent = "색깔 놀이터";
     eyebrow.textContent = "COLOR PLAY";
     nextQuizButton.textContent = "랜덤 색깔";
+  } else {
+    appTitle.textContent = "모양 놀이터";
+    eyebrow.textContent = "SHAPE PLAY";
+    nextQuizButton.textContent = "다음 문제";
   }
 }
 
@@ -280,17 +329,22 @@ function renderPlayKindTabs() {
   alphabetPlayButton.classList.toggle("active", playKind === "alphabet");
   numberPlayButton.classList.toggle("active", playKind === "number");
   colorPlayButton.classList.toggle("active", playKind === "color");
+  shapePlayButton.classList.toggle("active", playKind === "shape");
   alphabetPlayButton.setAttribute("aria-selected", String(playKind === "alphabet"));
   numberPlayButton.setAttribute("aria-selected", String(playKind === "number"));
   colorPlayButton.setAttribute("aria-selected", String(playKind === "color"));
+  shapePlayButton.setAttribute("aria-selected", String(playKind === "shape"));
 }
 
 function updateZones() {
   const isColor = playKind === "color";
+  const isShape = playKind === "shape";
+  const isLetterLike = !isColor && !isShape;
+  letterZone.hidden = !isLetterLike;
   colorZone.hidden = !isColor;
-  letterZone.hidden = isColor;
-  modeToggle.hidden = isColor;
-  if (isColor) {
+  shapeZone.hidden = !isShape;
+  modeToggle.hidden = isColor || isShape;
+  if (isColor || isShape) {
     nextQuizButton.style.visibility = "visible";
   }
 }
@@ -422,6 +476,75 @@ function bindDrag(element, handler) {
   element.addEventListener("pointercancel", stop);
 }
 
+function startShapePlay() {
+  newShapeProblem();
+}
+
+function newShapeProblem() {
+  window.clearTimeout(quizTimer);
+  shapeLocked = false;
+  shapeSelectedColor = "";
+  shapeSelectedShape = "";
+  shapeTargetColor = shapeColors[Math.floor(Math.random() * shapeColors.length)].key;
+  shapeTargetShape = shapeDefs[Math.floor(Math.random() * shapeDefs.length)].key;
+
+  const hex = shapeColors.find((item) => item.key === shapeTargetColor).hex;
+  shapeTarget.innerHTML = shapeSvgMarkup(shapeTargetShape, hex);
+  shapePrompt.textContent = "같은 색과 모양을 골라보세요";
+  pulseShape("pop");
+  refreshShapeSelection();
+}
+
+function refreshShapeSelection() {
+  inputPad.querySelectorAll(".pick-color").forEach((button) => {
+    button.classList.toggle("selected", button.dataset.color === shapeSelectedColor);
+  });
+  inputPad.querySelectorAll(".pick-shape").forEach((button) => {
+    button.classList.toggle("selected", button.dataset.shape === shapeSelectedShape);
+  });
+}
+
+function selectShapeColor(key) {
+  if (shapeLocked) return;
+  shapeSelectedColor = key;
+  playTone("tap");
+  refreshShapeSelection();
+  checkShapeAnswer();
+}
+
+function selectShapeShape(key) {
+  if (shapeLocked) return;
+  shapeSelectedShape = key;
+  playTone("tap");
+  refreshShapeSelection();
+  checkShapeAnswer();
+}
+
+function checkShapeAnswer() {
+  if (!shapeSelectedColor || !shapeSelectedShape) return;
+
+  if (shapeSelectedColor === shapeTargetColor && shapeSelectedShape === shapeTargetShape) {
+    shapeLocked = true;
+    shapePrompt.textContent = "맞았어요!";
+    pulseShape("correct");
+    flashStage("stage-correct");
+    playTone("correct");
+    burst("correct", shapeCard, shapeCelebration);
+    quizTimer = window.setTimeout(newShapeProblem, 1050);
+  } else {
+    shapePrompt.textContent = "다시 골라볼까요?";
+    pulseShape("wrong");
+    flashStage("stage-wrong");
+    playTone("wrong");
+  }
+}
+
+function pulseShape(className) {
+  shapeTarget.classList.remove("pop", "correct", "wrong");
+  void shapeTarget.offsetWidth;
+  shapeTarget.classList.add(className);
+}
+
 function startQuiz() {
   typedNumber = "";
   currentQuizHint = "";
@@ -449,7 +572,7 @@ function startQuiz() {
 }
 
 function handleKeyInput(rawValue) {
-  if (playKind === "color") return;
+  if (playKind === "color" || playKind === "shape") return;
 
   const letter = rawValue.toUpperCase();
 
@@ -702,9 +825,15 @@ function buildPad() {
   inputPad.innerHTML = "";
   inputPad.classList.toggle("number-pad", playKind === "number");
   inputPad.classList.toggle("color-pad", playKind === "color");
+  inputPad.classList.toggle("shape-pad", playKind === "shape");
 
   if (playKind === "color") {
     // 색깔 놀이는 색깔 영역 안의 컬러 피커를 사용하므로 입력 패드는 비워 둔다
+    return;
+  }
+
+  if (playKind === "shape") {
+    buildShapePad();
     return;
   }
 
@@ -739,6 +868,48 @@ function buildPad() {
   inputPad.appendChild(clearButton);
 }
 
+function buildShapePad() {
+  const colorRow = document.createElement("div");
+  colorRow.className = "shape-pick-row";
+  shapeColors.forEach(({ key, hex }) => {
+    const button = document.createElement("button");
+    button.className = "shape-pick pick-color";
+    button.type = "button";
+    button.dataset.color = key;
+    button.setAttribute("aria-label", `${key} 색깔`);
+    const chip = document.createElement("span");
+    chip.className = "pick-swatch";
+    chip.style.background = hex;
+    const name = document.createElement("span");
+    name.className = "pick-name";
+    name.textContent = key;
+    button.append(chip, name);
+    button.addEventListener("click", () => selectShapeColor(key));
+    colorRow.appendChild(button);
+  });
+
+  const shapeRow = document.createElement("div");
+  shapeRow.className = "shape-pick-row";
+  shapeDefs.forEach(({ key, label }) => {
+    const button = document.createElement("button");
+    button.className = "shape-pick pick-shape";
+    button.type = "button";
+    button.dataset.shape = key;
+    button.setAttribute("aria-label", `${label} 모양`);
+    const icon = document.createElement("span");
+    icon.className = "pick-icon";
+    icon.innerHTML = shapeSvgMarkup(key, "#5f6f85");
+    const name = document.createElement("span");
+    name.className = "pick-name";
+    name.textContent = label;
+    button.append(icon, name);
+    button.addEventListener("click", () => selectShapeShape(key));
+    shapeRow.appendChild(button);
+  });
+
+  inputPad.append(colorRow, shapeRow);
+}
+
 document.addEventListener("keydown", (event) => {
   handleKeyInput(event.key);
 });
@@ -746,6 +917,7 @@ document.addEventListener("keydown", (event) => {
 alphabetPlayButton.addEventListener("click", () => setPlayKind("alphabet"));
 numberPlayButton.addEventListener("click", () => setPlayKind("number"));
 colorPlayButton.addEventListener("click", () => setPlayKind("color"));
+shapePlayButton.addEventListener("click", () => setPlayKind("shape"));
 showModeButton.addEventListener("click", () => setMode("show"));
 quizModeButton.addEventListener("click", () => setMode("quiz"));
 operationButtons.forEach((button) => {
@@ -754,6 +926,10 @@ operationButtons.forEach((button) => {
 nextQuizButton.addEventListener("click", () => {
   if (playKind === "color") {
     randomizeColors();
+    return;
+  }
+  if (playKind === "shape") {
+    newShapeProblem();
     return;
   }
   startQuiz();
@@ -791,6 +967,8 @@ function readInitialState() {
     playKind = "number";
   } else if (requestedPlay === "color") {
     playKind = "color";
+  } else if (requestedPlay === "shape") {
+    playKind = "shape";
   } else {
     playKind = "alphabet";
   }
@@ -807,6 +985,8 @@ buildPad();
 
 if (playKind === "color") {
   startColorPlay();
+} else if (playKind === "shape") {
+  startShapePlay();
 } else {
   setMode(mode);
 }
