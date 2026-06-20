@@ -29,8 +29,11 @@
               <button class="mode-button" id="numberPlayButton" type="button" role="tab" aria-selected="false">
                 숫자
               </button>
+              <button class="mode-button" id="colorPlayButton" type="button" role="tab" aria-selected="false">
+                색깔
+              </button>
             </div>
-            <div class="mode-tabs" role="tablist" aria-label="놀이 모드">
+            <div class="mode-tabs" id="modeToggle" role="tablist" aria-label="놀이 모드">
               <button class="mode-button active" id="showModeButton" type="button" role="tab" aria-selected="true">
                 크게 보기
               </button>
@@ -59,13 +62,36 @@
           </button>
         </div>
 
-        <div class="letter-zone">
+        <div class="letter-zone" id="letterZone">
           <div class="letter-card" id="letterCard">
             <div class="prompt-label" id="promptLabel">키보드에서 알파벳을 눌러보세요</div>
             <div class="big-letter" id="bigLetter">A</div>
             <div class="phonics" id="phonics">Apple</div>
           </div>
           <div class="celebration" id="celebration" aria-hidden="true"></div>
+        </div>
+
+        <div class="color-zone" id="colorZone" hidden>
+          <div class="color-card" id="colorCard">
+            <div class="prompt-label" id="colorPrompt">첫 번째 색깔을 골라보세요</div>
+            <div class="color-mix">
+              <div class="color-slot" id="colorSlotA">
+                <div class="color-swatch empty" id="swatchA"></div>
+                <div class="color-name" id="nameA">?</div>
+              </div>
+              <div class="color-sign">+</div>
+              <div class="color-slot" id="colorSlotB">
+                <div class="color-swatch empty" id="swatchB"></div>
+                <div class="color-name" id="nameB">?</div>
+              </div>
+              <div class="color-sign">=</div>
+              <div class="color-slot result" id="colorSlotResult">
+                <div class="color-swatch empty" id="swatchResult"></div>
+                <div class="color-name" id="nameResult">?</div>
+              </div>
+            </div>
+          </div>
+          <div class="celebration" id="colorCelebration" aria-hidden="true"></div>
         </div>
 
         <div class="action-row">
