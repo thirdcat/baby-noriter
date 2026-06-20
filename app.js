@@ -39,6 +39,67 @@ const operationLabels = {
   divide: "나눗셈",
 };
 
+// 고를 수 있는 기본 색깔 (이름 -> 색상값)
+const colorPalette = {
+  빨강: "#e8473f",
+  주황: "#ff8a1e",
+  노랑: "#ffd21e",
+  초록: "#36c95a",
+  파랑: "#2f7ff0",
+  보라: "#9b51e0",
+  하양: "#ffffff",
+  검정: "#2b2b2b",
+};
+
+// 결과로 나올 수 있는 색깔 (기본 색깔 + 섞어서 나오는 색깔)
+const resultColors = {
+  ...colorPalette,
+  분홍: "#ff9ec7",
+  갈색: "#9c6b3f",
+  회색: "#9aa7b4",
+  하늘: "#8ed0ff",
+  연두: "#b6e84f",
+  남색: "#28408f",
+  청록: "#18b6b6",
+};
+
+// 두 색깔을 섞었을 때의 결과 (순서 상관 없음)
+const mixRules = [
+  ["빨강", "노랑", "주황"],
+  ["빨강", "파랑", "보라"],
+  ["빨강", "초록", "갈색"],
+  ["빨강", "주황", "주황"],
+  ["빨강", "보라", "보라"],
+  ["빨강", "하양", "분홍"],
+  ["빨강", "검정", "갈색"],
+  ["주황", "노랑", "주황"],
+  ["주황", "초록", "갈색"],
+  ["주황", "파랑", "갈색"],
+  ["주황", "보라", "갈색"],
+  ["주황", "하양", "분홍"],
+  ["주황", "검정", "갈색"],
+  ["노랑", "초록", "연두"],
+  ["노랑", "파랑", "초록"],
+  ["노랑", "보라", "갈색"],
+  ["노랑", "하양", "노랑"],
+  ["노랑", "검정", "갈색"],
+  ["초록", "파랑", "청록"],
+  ["초록", "보라", "갈색"],
+  ["초록", "하양", "연두"],
+  ["초록", "검정", "초록"],
+  ["파랑", "보라", "보라"],
+  ["파랑", "하양", "하늘"],
+  ["파랑", "검정", "남색"],
+  ["보라", "하양", "분홍"],
+  ["보라", "검정", "보라"],
+  ["하양", "검정", "회색"],
+];
+
+const mixTable = {};
+mixRules.forEach(([first, second, result]) => {
+  mixTable[[first, second].sort().join("|")] = result;
+});
+
 const stage = document.querySelector("#stage");
 const letterCard = document.querySelector("#letterCard");
 const bigLetter = document.querySelector("#bigLetter");
@@ -52,10 +113,25 @@ const operationTabs = document.querySelector("#operationTabs");
 const operationButtons = [...document.querySelectorAll(".operation-button")];
 const alphabetPlayButton = document.querySelector("#alphabetPlayButton");
 const numberPlayButton = document.querySelector("#numberPlayButton");
+const colorPlayButton = document.querySelector("#colorPlayButton");
+const modeToggle = document.querySelector("#modeToggle");
 const showModeButton = document.querySelector("#showModeButton");
 const quizModeButton = document.querySelector("#quizModeButton");
 const nextQuizButton = document.querySelector("#nextQuizButton");
 const soundToggle = document.querySelector("#soundToggle");
+const letterZone = document.querySelector("#letterZone");
+const colorZone = document.querySelector("#colorZone");
+const colorCard = document.querySelector("#colorCard");
+const colorCelebration = document.querySelector("#colorCelebration");
+const colorPrompt = document.querySelector("#colorPrompt");
+const swatchA = document.querySelector("#swatchA");
+const swatchB = document.querySelector("#swatchB");
+const swatchResult = document.querySelector("#swatchResult");
+const nameA = document.querySelector("#nameA");
+const nameB = document.querySelector("#nameB");
+const nameResult = document.querySelector("#nameResult");
+const colorSlotA = document.querySelector("#colorSlotA");
+const colorSlotB = document.querySelector("#colorSlotB");
 
 let playKind = "alphabet";
 let mode = "show";
@@ -66,6 +142,8 @@ let currentQuizHint = "";
 let quizTimer;
 let soundOn = true;
 let audioContext;
+let colorSlots = [null, null];
+let activeColorSlot = 0;
 
 function setDisplay(value, label, effect = "pop") {
   currentValue = String(value);
@@ -89,12 +167,20 @@ function pulseCard(className) {
 function setPlayKind(nextKind) {
   playKind = nextKind;
   typedNumber = "";
+  resetColorSlots();
   window.clearTimeout(quizTimer);
   updateStageState();
   renderPlayKindTabs();
   renderChrome();
   renderOperationTabs();
+  updateZones();
   buildPad();
+
+  if (playKind === "color") {
+    startColorPlay();
+    return;
+  }
+
   setMode(mode);
 }
 
@@ -129,18 +215,34 @@ function renderChrome() {
     appTitle.textContent = "알파벳 놀이터";
     eyebrow.textContent = "ALPHABET PLAY";
     nextQuizButton.textContent = "다음 문제";
-  } else {
+  } else if (playKind === "number") {
     appTitle.textContent = "숫자 놀이터";
     eyebrow.textContent = "NUMBER PLAY";
     nextQuizButton.textContent = "다음 숫자";
+  } else {
+    appTitle.textContent = "색깔 놀이터";
+    eyebrow.textContent = "COLOR PLAY";
+    nextQuizButton.textContent = "다시 하기";
   }
 }
 
 function renderPlayKindTabs() {
   alphabetPlayButton.classList.toggle("active", playKind === "alphabet");
   numberPlayButton.classList.toggle("active", playKind === "number");
+  colorPlayButton.classList.toggle("active", playKind === "color");
   alphabetPlayButton.setAttribute("aria-selected", String(playKind === "alphabet"));
   numberPlayButton.setAttribute("aria-selected", String(playKind === "number"));
+  colorPlayButton.setAttribute("aria-selected", String(playKind === "color"));
+}
+
+function updateZones() {
+  const isColor = playKind === "color";
+  colorZone.hidden = !isColor;
+  letterZone.hidden = isColor;
+  modeToggle.hidden = isColor;
+  if (isColor) {
+    nextQuizButton.style.visibility = "visible";
+  }
 }
 
 function updateStageState() {
@@ -167,6 +269,80 @@ function setNumberQuizKind(nextKind) {
   if (playKind === "number" && mode === "quiz") {
     startQuiz();
   }
+}
+
+function resetColorSlots() {
+  colorSlots = [null, null];
+  activeColorSlot = 0;
+}
+
+function startColorPlay() {
+  resetColorSlots();
+  colorPrompt.textContent = "첫 번째 색깔을 골라보세요";
+  renderColorSlots();
+}
+
+function colorsReady() {
+  return Boolean(colorSlots[0]) && Boolean(colorSlots[1]);
+}
+
+function mixColors(first, second) {
+  if (first === second) return first;
+  return mixTable[[first, second].sort().join("|")] || first;
+}
+
+function setSwatch(swatchEl, nameEl, name) {
+  if (!name) {
+    swatchEl.classList.add("empty");
+    swatchEl.style.background = "";
+    nameEl.textContent = "?";
+    return;
+  }
+  swatchEl.classList.remove("empty");
+  swatchEl.style.background = resultColors[name] || colorPalette[name];
+  nameEl.textContent = name;
+}
+
+function renderColorSlots() {
+  setSwatch(swatchA, nameA, colorSlots[0]);
+  setSwatch(swatchB, nameB, colorSlots[1]);
+  if (!colorsReady()) {
+    setSwatch(swatchResult, nameResult, null);
+  }
+  colorSlotA.classList.toggle("active", !colorsReady() && activeColorSlot === 0);
+  colorSlotB.classList.toggle("active", !colorsReady() && activeColorSlot === 1);
+}
+
+function handleColorInput(name) {
+  if (colorsReady()) {
+    resetColorSlots();
+  }
+
+  colorSlots[activeColorSlot] = name;
+  playTone("tap");
+
+  if (activeColorSlot === 0) {
+    activeColorSlot = 1;
+    colorPrompt.textContent = "두 번째 색깔을 골라보세요";
+    renderColorSlots();
+    return;
+  }
+
+  activeColorSlot = 0;
+  renderColorSlots();
+  revealMix();
+}
+
+function revealMix() {
+  const [first, second] = colorSlots;
+  const result = mixColors(first, second);
+  setSwatch(swatchResult, nameResult, result);
+  colorPrompt.textContent = `${first} + ${second} = ${result}`;
+  swatchResult.classList.remove("reveal");
+  void swatchResult.offsetWidth;
+  swatchResult.classList.add("reveal");
+  playTone("correct");
+  burst("correct", colorCard, colorCelebration);
 }
 
 function startQuiz() {
@@ -196,6 +372,8 @@ function startQuiz() {
 }
 
 function handleKeyInput(rawValue) {
+  if (playKind === "color") return;
+
   const letter = rawValue.toUpperCase();
 
   if (playKind === "alphabet") {
@@ -387,10 +565,11 @@ function flashStage(className) {
   stage.classList.add(className);
 }
 
-function burst(kind) {
-  const rect = letterCard.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
+function burst(kind, anchor = letterCard, layer = celebration) {
+  const rect = anchor.getBoundingClientRect();
+  const layerRect = layer.getBoundingClientRect();
+  const centerX = rect.left - layerRect.left + rect.width / 2;
+  const centerY = rect.top - layerRect.top + rect.height / 2;
   const count = kind === "correct" ? 34 : 12;
 
   for (let index = 0; index < count; index += 1) {
@@ -403,7 +582,7 @@ function burst(kind) {
     spark.style.setProperty("--spark-x", `${Math.cos(angle) * distance}px`);
     spark.style.setProperty("--spark-y", `${Math.sin(angle) * distance}px`);
     spark.style.setProperty("--spark-color", colors[index % colors.length]);
-    celebration.appendChild(spark);
+    layer.appendChild(spark);
     window.setTimeout(() => spark.remove(), 950);
   }
 }
@@ -445,6 +624,24 @@ function playTone(type) {
 function buildPad() {
   inputPad.innerHTML = "";
   inputPad.classList.toggle("number-pad", playKind === "number");
+  inputPad.classList.toggle("color-pad", playKind === "color");
+
+  if (playKind === "color") {
+    Object.entries(colorPalette).forEach(([name, hex]) => {
+      const button = document.createElement("button");
+      button.className = "color-button";
+      button.type = "button";
+      button.style.background = hex;
+      button.setAttribute("aria-label", `${name} 색깔`);
+      const tag = document.createElement("span");
+      tag.className = "color-button-name";
+      tag.textContent = name;
+      button.appendChild(tag);
+      button.addEventListener("click", () => handleColorInput(name));
+      inputPad.appendChild(button);
+    });
+    return;
+  }
 
   if (playKind === "alphabet") {
     alphabet.forEach((letter) => {
@@ -483,12 +680,19 @@ document.addEventListener("keydown", (event) => {
 
 alphabetPlayButton.addEventListener("click", () => setPlayKind("alphabet"));
 numberPlayButton.addEventListener("click", () => setPlayKind("number"));
+colorPlayButton.addEventListener("click", () => setPlayKind("color"));
 showModeButton.addEventListener("click", () => setMode("show"));
 quizModeButton.addEventListener("click", () => setMode("quiz"));
 operationButtons.forEach((button) => {
   button.addEventListener("click", () => setNumberQuizKind(button.dataset.operation));
 });
-nextQuizButton.addEventListener("click", startQuiz);
+nextQuizButton.addEventListener("click", () => {
+  if (playKind === "color") {
+    startColorPlay();
+    return;
+  }
+  startQuiz();
+});
 soundToggle.addEventListener("click", () => {
   soundOn = !soundOn;
   soundToggle.classList.toggle("active", soundOn);
@@ -507,7 +711,13 @@ function readInitialState() {
     numberQuizKind = requestedOperation;
   }
 
-  playKind = requestedPlay === "number" ? "number" : "alphabet";
+  if (requestedPlay === "number") {
+    playKind = "number";
+  } else if (requestedPlay === "color") {
+    playKind = "color";
+  } else {
+    playKind = "alphabet";
+  }
   mode = requestedMode === "quiz" ? "quiz" : "show";
 }
 
@@ -515,5 +725,12 @@ readInitialState();
 renderPlayKindTabs();
 renderChrome();
 updateStageState();
+renderOperationTabs();
+updateZones();
 buildPad();
-setMode(mode);
+
+if (playKind === "color") {
+  startColorPlay();
+} else {
+  setMode(mode);
+}
