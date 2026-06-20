@@ -73,21 +73,29 @@
 
         <div class="color-zone" id="colorZone" hidden>
           <div class="color-card" id="colorCard">
-            <div class="prompt-label" id="colorPrompt">첫 번째 색깔을 골라보세요</div>
+            <div class="prompt-label" id="colorPrompt">색깔을 골라 섞어보세요</div>
             <div class="color-mix">
-              <div class="color-slot" id="colorSlotA">
-                <div class="color-swatch empty" id="swatchA"></div>
+              <button class="color-slot" id="colorSlotA" type="button">
+                <div class="color-swatch" id="swatchA"></div>
                 <div class="color-name" id="nameA">?</div>
-              </div>
+              </button>
               <div class="color-sign">+</div>
-              <div class="color-slot" id="colorSlotB">
-                <div class="color-swatch empty" id="swatchB"></div>
+              <button class="color-slot" id="colorSlotB" type="button">
+                <div class="color-swatch" id="swatchB"></div>
                 <div class="color-name" id="nameB">?</div>
-              </div>
+              </button>
               <div class="color-sign">=</div>
               <div class="color-slot result" id="colorSlotResult">
-                <div class="color-swatch empty" id="swatchResult"></div>
+                <div class="color-swatch" id="swatchResult"></div>
                 <div class="color-name" id="nameResult">?</div>
+              </div>
+            </div>
+            <div class="color-picker">
+              <div class="sv-square" id="svSquare">
+                <span class="picker-thumb" id="svThumb"></span>
+              </div>
+              <div class="hue-slider" id="hueSlider">
+                <span class="picker-thumb hue-thumb" id="hueThumb"></span>
               </div>
             </div>
           </div>

@@ -39,66 +39,109 @@ const operationLabels = {
   divide: "나눗셈",
 };
 
-// 고를 수 있는 기본 색깔 (이름 -> 색상값)
-const colorPalette = {
-  빨강: "#e8473f",
-  주황: "#ff8a1e",
-  노랑: "#ffd21e",
-  초록: "#36c95a",
-  파랑: "#2f7ff0",
-  보라: "#9b51e0",
-  하양: "#ffffff",
-  검정: "#2b2b2b",
-};
+// 색깔 놀이: 포토샵식 컬러 피커로 연속 선택, RGB 평균으로 섞기
 
-// 결과로 나올 수 있는 색깔 (기본 색깔 + 섞어서 나오는 색깔)
-const resultColors = {
-  ...colorPalette,
-  분홍: "#ff9ec7",
-  갈색: "#9c6b3f",
-  회색: "#9aa7b4",
-  하늘: "#8ed0ff",
-  연두: "#b6e84f",
-  남색: "#28408f",
-  청록: "#18b6b6",
-};
+function hsvToRgb(h, s, v) {
+  const c = v * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = v - c;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (h < 60) { [r, g, b] = [c, x, 0]; }
+  else if (h < 120) { [r, g, b] = [x, c, 0]; }
+  else if (h < 180) { [r, g, b] = [0, c, x]; }
+  else if (h < 240) { [r, g, b] = [0, x, c]; }
+  else if (h < 300) { [r, g, b] = [x, 0, c]; }
+  else { [r, g, b] = [c, 0, x]; }
+  return {
+    r: Math.round((r + m) * 255),
+    g: Math.round((g + m) * 255),
+    b: Math.round((b + m) * 255),
+  };
+}
 
-// 두 색깔을 섞었을 때의 결과 (순서 상관 없음)
-const mixRules = [
-  ["빨강", "노랑", "주황"],
-  ["빨강", "파랑", "보라"],
-  ["빨강", "초록", "갈색"],
-  ["빨강", "주황", "주황"],
-  ["빨강", "보라", "보라"],
-  ["빨강", "하양", "분홍"],
-  ["빨강", "검정", "갈색"],
-  ["주황", "노랑", "주황"],
-  ["주황", "초록", "갈색"],
-  ["주황", "파랑", "갈색"],
-  ["주황", "보라", "갈색"],
-  ["주황", "하양", "분홍"],
-  ["주황", "검정", "갈색"],
-  ["노랑", "초록", "연두"],
-  ["노랑", "파랑", "초록"],
-  ["노랑", "보라", "갈색"],
-  ["노랑", "하양", "노랑"],
-  ["노랑", "검정", "갈색"],
-  ["초록", "파랑", "청록"],
-  ["초록", "보라", "갈색"],
-  ["초록", "하양", "연두"],
-  ["초록", "검정", "초록"],
-  ["파랑", "보라", "보라"],
-  ["파랑", "하양", "하늘"],
-  ["파랑", "검정", "남색"],
-  ["보라", "하양", "분홍"],
-  ["보라", "검정", "보라"],
-  ["하양", "검정", "회색"],
-];
+function rgbToHsl(r, g, b) {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0;
+  let s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return { h, s, l };
+}
 
-const mixTable = {};
-mixRules.forEach(([first, second, result]) => {
-  mixTable[[first, second].sort().join("|")] = result;
-});
+function rgbToHex({ r, g, b }) {
+  return `#${[r, g, b].map((n) => n.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function mixRgb(a, b) {
+  return {
+    r: Math.round((a.r + b.r) / 2),
+    g: Math.round((a.g + b.g) / 2),
+    b: Math.round((a.b + b.b) / 2),
+  };
+}
+
+function hueBaseName(h) {
+  if (h < 15) return "빨강";
+  if (h < 45) return "주황";
+  if (h < 70) return "노랑";
+  if (h < 90) return "연두";
+  if (h < 160) return "초록";
+  if (h < 195) return "청록";
+  if (h < 255) return "파랑";
+  if (h < 300) return "보라";
+  if (h < 330) return "자주";
+  return "빨강";
+}
+
+// RGB 값을 한글 색 이름으로 변환
+function nameColorKo(r, g, b) {
+  const { h, s, l } = rgbToHsl(r, g, b);
+
+  // 무채색 (채도가 거의 없을 때)
+  if (s < 0.12) {
+    if (l < 0.15) return "검정";
+    if (l > 0.92) return "하양";
+    if (l > 0.66) return "밝은 회색";
+    if (l < 0.33) return "어두운 회색";
+    return "회색";
+  }
+
+  const reddish = h < 15 || h >= 330;
+  const orange = h >= 15 && h < 45;
+  const yellow = h >= 45 && h < 70;
+  const cyan = h >= 160 && h < 195;
+  const blue = h >= 195 && h < 255;
+  const purple = h >= 255 && h < 300;
+
+  // 명도·채도와 결합된 고유 이름
+  if ((orange || yellow || (reddish && h < 15)) && l < 0.42 && s > 0.18) {
+    return l < 0.26 ? "진한 갈색" : "갈색";
+  }
+  if (blue && l < 0.35) return "남색";
+  if ((blue || cyan) && l > 0.72) return "하늘색";
+  if (reddish && l > 0.74) return l > 0.86 ? "연분홍" : "분홍";
+  if (purple && l > 0.74) return "연보라";
+
+  // 일반 색상 + 밝기/탁함 수식어
+  const base = hueBaseName(h);
+  if (l > 0.80) return `연한 ${base}`;
+  if (l < 0.30) return `진한 ${base}`;
+  if (s < 0.22) return `칙칙한 ${base}`;
+  return base;
+}
 
 const stage = document.querySelector("#stage");
 const letterCard = document.querySelector("#letterCard");
@@ -132,6 +175,10 @@ const nameB = document.querySelector("#nameB");
 const nameResult = document.querySelector("#nameResult");
 const colorSlotA = document.querySelector("#colorSlotA");
 const colorSlotB = document.querySelector("#colorSlotB");
+const svSquare = document.querySelector("#svSquare");
+const svThumb = document.querySelector("#svThumb");
+const hueSlider = document.querySelector("#hueSlider");
+const hueThumb = document.querySelector("#hueThumb");
 
 let playKind = "alphabet";
 let mode = "show";
@@ -142,7 +189,11 @@ let currentQuizHint = "";
 let quizTimer;
 let soundOn = true;
 let audioContext;
-let colorSlots = [null, null];
+// 두 색깔을 HSV(색상·채도·명도)로 저장, activeColorSlot이 지금 고르는 칸
+let colorState = [
+  { h: 0, s: 0.85, v: 0.92 },
+  { h: 215, s: 0.85, v: 0.92 },
+];
 let activeColorSlot = 0;
 
 function setDisplay(value, label, effect = "pop") {
@@ -167,7 +218,6 @@ function pulseCard(className) {
 function setPlayKind(nextKind) {
   playKind = nextKind;
   typedNumber = "";
-  resetColorSlots();
   window.clearTimeout(quizTimer);
   updateStageState();
   renderPlayKindTabs();
@@ -222,7 +272,7 @@ function renderChrome() {
   } else {
     appTitle.textContent = "색깔 놀이터";
     eyebrow.textContent = "COLOR PLAY";
-    nextQuizButton.textContent = "다시 하기";
+    nextQuizButton.textContent = "랜덤 색깔";
   }
 }
 
@@ -271,78 +321,105 @@ function setNumberQuizKind(nextKind) {
   }
 }
 
-function resetColorSlots() {
-  colorSlots = [null, null];
-  activeColorSlot = 0;
+function slotRgb(index) {
+  const { h, s, v } = colorState[index];
+  return hsvToRgb(h, s, v);
+}
+
+function paintSwatch(swatchEl, nameEl, rgb) {
+  swatchEl.classList.remove("empty");
+  swatchEl.style.background = rgbToHex(rgb);
+  nameEl.textContent = nameColorKo(rgb.r, rgb.g, rgb.b);
+}
+
+function setActiveSlot(index) {
+  activeColorSlot = index;
+  colorSlotA.classList.toggle("active", index === 0);
+  colorSlotB.classList.toggle("active", index === 1);
+  syncPicker();
+}
+
+function syncPicker() {
+  const { h, s, v } = colorState[activeColorSlot];
+  // 채도/명도 박스 배경을 현재 색상(hue)에 맞추고, 점 위치 갱신
+  const pureHue = rgbToHex(hsvToRgb(h, 1, 1));
+  svSquare.style.setProperty("--hue-color", pureHue);
+  svThumb.style.left = `${s * 100}%`;
+  svThumb.style.top = `${(1 - v) * 100}%`;
+  svThumb.style.background = rgbToHex(hsvToRgb(h, s, v));
+  hueThumb.style.left = `${(h / 360) * 100}%`;
+  hueThumb.style.background = pureHue;
+}
+
+function renderColorPlay() {
+  const rgbA = slotRgb(0);
+  const rgbB = slotRgb(1);
+  const rgbMix = mixRgb(rgbA, rgbB);
+  paintSwatch(swatchA, nameA, rgbA);
+  paintSwatch(swatchB, nameB, rgbB);
+  paintSwatch(swatchResult, nameResult, rgbMix);
+  colorPrompt.textContent = `${nameColorKo(rgbA.r, rgbA.g, rgbA.b)} + ${nameColorKo(rgbB.r, rgbB.g, rgbB.b)} = ${nameColorKo(rgbMix.r, rgbMix.g, rgbMix.b)}`;
 }
 
 function startColorPlay() {
-  resetColorSlots();
-  colorPrompt.textContent = "첫 번째 색깔을 골라보세요";
-  renderColorSlots();
+  setActiveSlot(0);
+  renderColorPlay();
 }
 
-function colorsReady() {
-  return Boolean(colorSlots[0]) && Boolean(colorSlots[1]);
-}
-
-function mixColors(first, second) {
-  if (first === second) return first;
-  return mixTable[[first, second].sort().join("|")] || first;
-}
-
-function setSwatch(swatchEl, nameEl, name) {
-  if (!name) {
-    swatchEl.classList.add("empty");
-    swatchEl.style.background = "";
-    nameEl.textContent = "?";
-    return;
-  }
-  swatchEl.classList.remove("empty");
-  swatchEl.style.background = resultColors[name] || colorPalette[name];
-  nameEl.textContent = name;
-}
-
-function renderColorSlots() {
-  setSwatch(swatchA, nameA, colorSlots[0]);
-  setSwatch(swatchB, nameB, colorSlots[1]);
-  if (!colorsReady()) {
-    setSwatch(swatchResult, nameResult, null);
-  }
-  colorSlotA.classList.toggle("active", !colorsReady() && activeColorSlot === 0);
-  colorSlotB.classList.toggle("active", !colorsReady() && activeColorSlot === 1);
-}
-
-function handleColorInput(name) {
-  if (colorsReady()) {
-    resetColorSlots();
-  }
-
-  colorSlots[activeColorSlot] = name;
+function randomizeColors() {
+  colorState = colorState.map(() => ({
+    h: Math.random() * 360,
+    s: 0.55 + Math.random() * 0.45,
+    v: 0.55 + Math.random() * 0.45,
+  }));
   playTone("tap");
-
-  if (activeColorSlot === 0) {
-    activeColorSlot = 1;
-    colorPrompt.textContent = "두 번째 색깔을 골라보세요";
-    renderColorSlots();
-    return;
-  }
-
-  activeColorSlot = 0;
-  renderColorSlots();
-  revealMix();
-}
-
-function revealMix() {
-  const [first, second] = colorSlots;
-  const result = mixColors(first, second);
-  setSwatch(swatchResult, nameResult, result);
-  colorPrompt.textContent = `${first} + ${second} = ${result}`;
+  syncPicker();
+  renderColorPlay();
   swatchResult.classList.remove("reveal");
   void swatchResult.offsetWidth;
   swatchResult.classList.add("reveal");
-  playTone("correct");
   burst("correct", colorCard, colorCelebration);
+}
+
+function pointerRatio(event, element) {
+  const rect = element.getBoundingClientRect();
+  const x = (event.clientX - rect.left) / rect.width;
+  const y = (event.clientY - rect.top) / rect.height;
+  return {
+    x: Math.min(1, Math.max(0, x)),
+    y: Math.min(1, Math.max(0, y)),
+  };
+}
+
+function pickFromSquare(event) {
+  const { x, y } = pointerRatio(event, svSquare);
+  colorState[activeColorSlot].s = x;
+  colorState[activeColorSlot].v = 1 - y;
+  syncPicker();
+  renderColorPlay();
+}
+
+function pickFromHue(event) {
+  const { x } = pointerRatio(event, hueSlider);
+  colorState[activeColorSlot].h = x * 360;
+  syncPicker();
+  renderColorPlay();
+}
+
+function bindDrag(element, handler) {
+  let active = false;
+  element.addEventListener("pointerdown", (event) => {
+    active = true;
+    element.setPointerCapture(event.pointerId);
+    playTone("tap");
+    handler(event);
+  });
+  element.addEventListener("pointermove", (event) => {
+    if (active) handler(event);
+  });
+  const stop = () => { active = false; };
+  element.addEventListener("pointerup", stop);
+  element.addEventListener("pointercancel", stop);
 }
 
 function startQuiz() {
@@ -627,19 +704,7 @@ function buildPad() {
   inputPad.classList.toggle("color-pad", playKind === "color");
 
   if (playKind === "color") {
-    Object.entries(colorPalette).forEach(([name, hex]) => {
-      const button = document.createElement("button");
-      button.className = "color-button";
-      button.type = "button";
-      button.style.background = hex;
-      button.setAttribute("aria-label", `${name} 색깔`);
-      const tag = document.createElement("span");
-      tag.className = "color-button-name";
-      tag.textContent = name;
-      button.appendChild(tag);
-      button.addEventListener("click", () => handleColorInput(name));
-      inputPad.appendChild(button);
-    });
+    // 색깔 놀이는 색깔 영역 안의 컬러 피커를 사용하므로 입력 패드는 비워 둔다
     return;
   }
 
@@ -688,11 +753,22 @@ operationButtons.forEach((button) => {
 });
 nextQuizButton.addEventListener("click", () => {
   if (playKind === "color") {
-    startColorPlay();
+    randomizeColors();
     return;
   }
   startQuiz();
 });
+
+colorSlotA.addEventListener("click", () => {
+  if (activeColorSlot !== 0) playTone("tap");
+  setActiveSlot(0);
+});
+colorSlotB.addEventListener("click", () => {
+  if (activeColorSlot !== 1) playTone("tap");
+  setActiveSlot(1);
+});
+bindDrag(svSquare, pickFromSquare);
+bindDrag(hueSlider, pickFromHue);
 soundToggle.addEventListener("click", () => {
   soundOn = !soundOn;
   soundToggle.classList.toggle("active", soundOn);
