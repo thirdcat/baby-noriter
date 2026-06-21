@@ -914,6 +914,11 @@ document.addEventListener("keydown", (event) => {
   handleKeyInput(event.key);
 });
 
+// iOS 사파리는 viewport의 user-scalable=no를 무시하므로, 핀치 줌 제스처를 직접 막는다
+["gesturestart", "gesturechange", "gestureend"].forEach((type) => {
+  document.addEventListener(type, (event) => event.preventDefault(), { passive: false });
+});
+
 alphabetPlayButton.addEventListener("click", () => setPlayKind("alphabet"));
 numberPlayButton.addEventListener("click", () => setPlayKind("number"));
 colorPlayButton.addEventListener("click", () => setPlayKind("color"));

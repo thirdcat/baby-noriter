@@ -19,6 +19,8 @@ html,
 body {
   height: 100%;
   min-height: 100%;
+  /* 모바일에서 더블탭으로 화면이 확대되는 것을 막는다 (탭/클릭은 그대로) */
+  touch-action: manipulation;
 }
 
 body {
@@ -30,10 +32,15 @@ body {
     radial-gradient(circle at 88% 12%, rgba(248, 123, 200, 0.72) 0 7rem, transparent 7.1rem),
     linear-gradient(135deg, #b7e8ff 0%, #d7f6d8 46%, #fff2b8 100%);
   overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button {
   font: inherit;
+  touch-action: manipulation;
 }
 
 .app-shell {
