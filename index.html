@@ -35,6 +35,9 @@
               <button class="mode-button" id="shapePlayButton" type="button" role="tab" aria-selected="false">
                 모양
               </button>
+              <button class="mode-button" id="hangulPlayButton" type="button" role="tab" aria-selected="false">
+                한글
+              </button>
             </div>
             <div class="mode-tabs" id="modeToggle" role="tablist" aria-label="놀이 모드">
               <button class="mode-button active" id="showModeButton" type="button" role="tab" aria-selected="true">
@@ -62,6 +65,18 @@
           </button>
           <button class="operation-button" data-operation="divide" type="button" role="tab" aria-selected="false">
             나눗셈
+          </button>
+        </div>
+
+        <div class="operation-tabs hangul-tabs" id="hangulTabs" role="tablist" aria-label="한글 종류">
+          <button class="operation-button active" data-hangul="consonant" type="button" role="tab" aria-selected="true">
+            자음
+          </button>
+          <button class="operation-button" data-hangul="vowel" type="button" role="tab" aria-selected="false">
+            모음
+          </button>
+          <button class="operation-button" data-hangul="syllable" type="button" role="tab" aria-selected="false">
+            가나다
           </button>
         </div>
 

@@ -172,6 +172,80 @@ function shapeSvgMarkup(shapeKey, fill) {
   return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="${fill}">${def.svg}</svg>`;
 }
 
+// 한글 놀이: 자음 / 모음 / 가나다 (만 4세 눈높이, 그림 + 음성)
+const hangulSets = {
+  consonant: [
+    { ch: "ㄱ", name: "기역", word: "기린", emoji: "🦒" },
+    { ch: "ㄴ", name: "니은", word: "나비", emoji: "🦋" },
+    { ch: "ㄷ", name: "디귿", word: "도넛", emoji: "🍩" },
+    { ch: "ㄹ", name: "리을", word: "로봇", emoji: "🤖" },
+    { ch: "ㅁ", name: "미음", word: "모자", emoji: "🧢" },
+    { ch: "ㅂ", name: "비읍", word: "바나나", emoji: "🍌" },
+    { ch: "ㅅ", name: "시옷", word: "사과", emoji: "🍎" },
+    { ch: "ㅇ", name: "이응", word: "오리", emoji: "🦆" },
+    { ch: "ㅈ", name: "지읒", word: "자동차", emoji: "🚗" },
+    { ch: "ㅊ", name: "치읓", word: "치즈", emoji: "🧀" },
+    { ch: "ㅋ", name: "키읔", word: "코끼리", emoji: "🐘" },
+    { ch: "ㅌ", name: "티읕", word: "토끼", emoji: "🐰" },
+    { ch: "ㅍ", name: "피읖", word: "포도", emoji: "🍇" },
+    { ch: "ㅎ", name: "히읗", word: "호랑이", emoji: "🐯" },
+  ],
+  vowel: [
+    { ch: "ㅏ", name: "아", word: "아기", emoji: "👶" },
+    { ch: "ㅑ", name: "야", word: "야구공", emoji: "⚾" },
+    { ch: "ㅓ", name: "어", word: "어항", emoji: "🐠" },
+    { ch: "ㅕ", name: "여", word: "여우", emoji: "🦊" },
+    { ch: "ㅗ", name: "오", word: "오이", emoji: "🥒" },
+    { ch: "ㅛ", name: "요", word: "요요", emoji: "🪀" },
+    { ch: "ㅜ", name: "우", word: "우산", emoji: "☂️" },
+    { ch: "ㅠ", name: "유", word: "유니콘", emoji: "🦄" },
+    { ch: "ㅡ", name: "으", word: "", emoji: "" },
+    { ch: "ㅣ", name: "이", word: "이", emoji: "🦷" },
+  ],
+  syllable: [
+    { ch: "가", word: "가방", emoji: "🎒" },
+    { ch: "나", word: "나무", emoji: "🌳" },
+    { ch: "다", word: "다람쥐", emoji: "🐿️" },
+    { ch: "라", word: "라면", emoji: "🍜" },
+    { ch: "마", word: "마차", emoji: "🐎" },
+    { ch: "바", word: "바다", emoji: "🌊" },
+    { ch: "사", word: "사자", emoji: "🦁" },
+    { ch: "아", word: "아이스크림", emoji: "🍦" },
+    { ch: "자", word: "자전거", emoji: "🚲" },
+    { ch: "차", word: "자동차", emoji: "🚗" },
+    { ch: "카", word: "카메라", emoji: "📷" },
+    { ch: "타", word: "타조", emoji: "🐦" },
+    { ch: "파", word: "파인애플", emoji: "🍍" },
+    { ch: "하", word: "하마", emoji: "🦛" },
+  ],
+};
+
+const hangulKindLabels = { consonant: "자음", vowel: "모음", syllable: "가나다" };
+
+function currentHangulSet() {
+  return hangulSets[hangulKind];
+}
+
+function hangulPhonics(item) {
+  if (item.word) return `${item.emoji} ${item.word}`;
+  return item.name || item.ch;
+}
+
+function hangulSpeechText(item) {
+  const lead = item.name || item.ch;
+  return item.word ? `${lead}. ${item.word}` : lead;
+}
+
+function speak(text) {
+  if (!soundOn || !text) return;
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "ko-KR";
+  utterance.rate = 0.9;
+  window.speechSynthesis.speak(utterance);
+}
+
 const stage = document.querySelector("#stage");
 const letterCard = document.querySelector("#letterCard");
 const bigLetter = document.querySelector("#bigLetter");
@@ -214,6 +288,9 @@ const shapeCard = document.querySelector("#shapeCard");
 const shapeTarget = document.querySelector("#shapeTarget");
 const shapePrompt = document.querySelector("#shapePrompt");
 const shapeCelebration = document.querySelector("#shapeCelebration");
+const hangulPlayButton = document.querySelector("#hangulPlayButton");
+const hangulTabs = document.querySelector("#hangulTabs");
+const hangulButtons = [...document.querySelectorAll("[data-hangul]")];
 
 let playKind = "alphabet";
 let mode = "show";
@@ -235,6 +312,7 @@ let shapeTargetShape = "";
 let shapeSelectedColor = "";
 let shapeSelectedShape = "";
 let shapeLocked = false;
+let hangulKind = "consonant";
 
 function setDisplay(value, label, effect = "pop") {
   currentValue = String(value);
@@ -263,6 +341,7 @@ function setPlayKind(nextKind) {
   renderPlayKindTabs();
   renderChrome();
   renderOperationTabs();
+  renderHangulTabs();
   updateZones();
   buildPad();
 
@@ -299,6 +378,11 @@ function setMode(nextMode) {
   if (playKind === "alphabet") {
     promptLabel.textContent = "키보드에서 알파벳을 눌러보세요";
     setDisplay(alphabet.includes(currentValue) ? currentValue : "A", words[alphabet.includes(currentValue) ? currentValue : "A"]);
+  } else if (playKind === "hangul") {
+    const item = currentHangulSet()[0];
+    currentValue = item.ch;
+    promptLabel.textContent = "버튼을 눌러 한글을 만나봐요";
+    setDisplay(item.ch, hangulPhonics(item));
   } else {
     promptLabel.textContent = "키보드나 버튼으로 숫자를 눌러보세요";
     setDisplay("0", "영");
@@ -318,9 +402,13 @@ function renderChrome() {
     appTitle.textContent = "색깔 놀이터";
     eyebrow.textContent = "COLOR PLAY";
     nextQuizButton.textContent = "랜덤 색깔";
-  } else {
+  } else if (playKind === "shape") {
     appTitle.textContent = "모양 놀이터";
     eyebrow.textContent = "SHAPE PLAY";
+    nextQuizButton.textContent = "다음 문제";
+  } else {
+    appTitle.textContent = "한글 놀이터";
+    eyebrow.textContent = "HANGUL PLAY";
     nextQuizButton.textContent = "다음 문제";
   }
 }
@@ -330,10 +418,34 @@ function renderPlayKindTabs() {
   numberPlayButton.classList.toggle("active", playKind === "number");
   colorPlayButton.classList.toggle("active", playKind === "color");
   shapePlayButton.classList.toggle("active", playKind === "shape");
+  hangulPlayButton.classList.toggle("active", playKind === "hangul");
   alphabetPlayButton.setAttribute("aria-selected", String(playKind === "alphabet"));
   numberPlayButton.setAttribute("aria-selected", String(playKind === "number"));
   colorPlayButton.setAttribute("aria-selected", String(playKind === "color"));
   shapePlayButton.setAttribute("aria-selected", String(playKind === "shape"));
+  hangulPlayButton.setAttribute("aria-selected", String(playKind === "hangul"));
+}
+
+function renderHangulTabs() {
+  hangulTabs.classList.toggle("visible", playKind === "hangul");
+  hangulButtons.forEach((button) => {
+    const isActive = button.dataset.hangul === hangulKind;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+}
+
+function setHangulKind(nextKind) {
+  hangulKind = nextKind;
+  renderHangulTabs();
+  buildPad();
+  if (mode === "quiz") {
+    startQuiz();
+  } else {
+    const item = currentHangulSet()[0];
+    currentValue = item.ch;
+    setDisplay(item.ch, hangulPhonics(item));
+  }
 }
 
 function updateZones() {
@@ -556,6 +668,16 @@ function startQuiz() {
     return;
   }
 
+  if (playKind === "hangul") {
+    const set = currentHangulSet();
+    const item = set[Math.floor(Math.random() * set.length)];
+    currentValue = item.ch;
+    promptLabel.textContent = "같은 글자를 찾아보세요";
+    setDisplay(item.ch, hangulPhonics(item));
+    speak(item.name || item.ch);
+    return;
+  }
+
   if (numberQuizKind === "number") {
     const next = String(Math.floor(Math.random() * 1000));
     promptLabel.textContent = "이 숫자를 똑같이 눌러보세요";
@@ -571,8 +693,28 @@ function startQuiz() {
   currentValue = String(problem.answer);
 }
 
+function handleHangulInput(ch) {
+  const item = currentHangulSet().find((entry) => entry.ch === ch);
+  if (!item) return;
+
+  if (mode === "show") {
+    promptLabel.textContent = item.name ? `${item.ch} (${item.name})` : item.ch;
+    setDisplay(item.ch, hangulPhonics(item));
+    speak(hangulSpeechText(item));
+    burst("tap");
+    return;
+  }
+
+  if (ch === currentValue) {
+    speak(hangulSpeechText(item));
+    correctAnswer();
+  } else {
+    wrongAnswer();
+  }
+}
+
 function handleKeyInput(rawValue) {
-  if (playKind === "color" || playKind === "shape") return;
+  if (playKind === "color" || playKind === "shape" || playKind === "hangul") return;
 
   const letter = rawValue.toUpperCase();
 
@@ -826,6 +968,7 @@ function buildPad() {
   inputPad.classList.toggle("number-pad", playKind === "number");
   inputPad.classList.toggle("color-pad", playKind === "color");
   inputPad.classList.toggle("shape-pad", playKind === "shape");
+  inputPad.classList.toggle("hangul-pad", playKind === "hangul");
 
   if (playKind === "color") {
     // 색깔 놀이는 색깔 영역 안의 컬러 피커를 사용하므로 입력 패드는 비워 둔다
@@ -834,6 +977,19 @@ function buildPad() {
 
   if (playKind === "shape") {
     buildShapePad();
+    return;
+  }
+
+  if (playKind === "hangul") {
+    currentHangulSet().forEach((item) => {
+      const button = document.createElement("button");
+      button.className = "letter-button";
+      button.type = "button";
+      button.textContent = item.ch;
+      button.setAttribute("aria-label", item.name ? `${item.name} ${item.word || ""}`.trim() : item.ch);
+      button.addEventListener("click", () => handleHangulInput(item.ch));
+      inputPad.appendChild(button);
+    });
     return;
   }
 
@@ -923,10 +1079,14 @@ alphabetPlayButton.addEventListener("click", () => setPlayKind("alphabet"));
 numberPlayButton.addEventListener("click", () => setPlayKind("number"));
 colorPlayButton.addEventListener("click", () => setPlayKind("color"));
 shapePlayButton.addEventListener("click", () => setPlayKind("shape"));
+hangulPlayButton.addEventListener("click", () => setPlayKind("hangul"));
 showModeButton.addEventListener("click", () => setMode("show"));
 quizModeButton.addEventListener("click", () => setMode("quiz"));
 operationButtons.forEach((button) => {
   button.addEventListener("click", () => setNumberQuizKind(button.dataset.operation));
+});
+hangulButtons.forEach((button) => {
+  button.addEventListener("click", () => setHangulKind(button.dataset.hangul));
 });
 nextQuizButton.addEventListener("click", () => {
   if (playKind === "color") {
@@ -955,7 +1115,11 @@ soundToggle.addEventListener("click", () => {
   soundToggle.classList.toggle("active", soundOn);
   soundToggle.setAttribute("aria-pressed", String(soundOn));
   soundToggle.textContent = soundOn ? "소리 켬" : "소리 끔";
-  if (soundOn) playTone("tap");
+  if (soundOn) {
+    playTone("tap");
+  } else if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
 });
 
 function readInitialState() {
@@ -963,9 +1127,14 @@ function readInitialState() {
   const requestedPlay = params.get("play");
   const requestedMode = params.get("mode");
   const requestedOperation = params.get("op");
+  const requestedSet = params.get("set");
 
   if (requestedOperation && operationLabels[requestedOperation]) {
     numberQuizKind = requestedOperation;
+  }
+
+  if (requestedSet && hangulSets[requestedSet]) {
+    hangulKind = requestedSet;
   }
 
   if (requestedPlay === "number") {
@@ -974,6 +1143,8 @@ function readInitialState() {
     playKind = "color";
   } else if (requestedPlay === "shape") {
     playKind = "shape";
+  } else if (requestedPlay === "hangul") {
+    playKind = "hangul";
   } else {
     playKind = "alphabet";
   }
@@ -985,6 +1156,7 @@ renderPlayKindTabs();
 renderChrome();
 updateStageState();
 renderOperationTabs();
+renderHangulTabs();
 updateZones();
 buildPad();
 

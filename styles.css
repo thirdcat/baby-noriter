@@ -161,6 +161,14 @@ h1 {
   margin-bottom: 0;
 }
 
+.operation-tabs.hangul-tabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.input-pad.hangul-pad {
+  grid-template-columns: repeat(7, minmax(40px, 1fr));
+}
+
 .operation-button {
   height: 30px;
   min-height: 0;
@@ -913,6 +921,10 @@ button.color-slot:active {
 
   .input-pad.number-pad {
     grid-template-columns: repeat(4, minmax(48px, 1fr));
+  }
+
+  .input-pad.hangul-pad {
+    grid-template-columns: repeat(5, minmax(40px, 1fr));
   }
 
   .input-pad.number-pad .number-button {
